@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -968,9 +967,16 @@ function calculate(){
       <div class="roi-pct" style="color:#2980b9">${(annualOcc*100).toFixed(1)}%</div>
     </div>
     <div style="margin-top:16px;padding:13px 15px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
-      <div style="font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">診断コメント</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.85;">${diagnose(roi,annualOcc*100)}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;">診断コメント</div>
+        <button onclick="toggleDiagEdit()" id="diagEditBtn" style="font-size:10px;background:rgba(90,140,30,.1);border:1px solid rgba(90,140,30,.3);color:var(--green-dk);padding:2px 8px;border-radius:4px;cursor:pointer;">✏️ 編集</button>
+      </div>
+      <div style="font-size:12px;line-height:1.85;" id="diagnosisText"></div>
+      <textarea id="diagnosisEdit" style="display:none;width:100%;font-size:12px;line-height:1.85;font-family:'Noto Sans JP',sans-serif;background:#fff;border:1px solid var(--border);border-radius:6px;padding:8px;outline:none;resize:vertical;min-height:60px;color:var(--text);" oninput="syncDiagText()"></textarea>
     </div>`;
+
+  // 診断コメント設定（innerHTML書き換え後に実行）
+  diagnose(roi, annualOcc*100, annualProfit, propCost);
 
   // ── PDF REPORT POPULATE ──
   const sRates=[highRate,midRate,lowRate];
@@ -1074,12 +1080,23 @@ function calculate(){
   };
 }
 
-function diagnose(roi,occ){
-  if(roi>=10&&occ>=60) return '✅ 優秀な収益性です。高稼働・高ROIを維持しており、事業として非常に健全です。スケールアップも検討できます。';
-  if(roi>=5&&occ>=40)  return '👍 良好な収益性です。安定した運営が見込めます。稼働率向上やOTA手数料の見直しでさらなる改善が可能です。';
-  if(roi>=2)           return '⚠️ 収益性はやや低めです。繁忙期施策の強化、宿泊料金の見直し、またはコスト削減の余地を確認してください。';
-  if(roi>0)            return '⚠️ ROIが低い状態です。料金戦略や稼働率向上の根本的な見直しをお勧めします。';
-  return '❌ 現在の設定では赤字の見込みです。収益増加またはコスト削減の抜本的な見直しが必要です。';
+function diagnose(roi, occ, profit, propCostVal){
+  let text, color;
+  if(propCostVal === 0){
+    if(profit > 0 && occ >= 50){ text='✅ 優秀な収益性です。高稼働・高利益を維持しており、事業として非常に健全です。スケールアップも検討できます。'; color='#27ae60'; }
+    else if(profit > 0 && occ >= 30){ text='👍 良好な収益性です。安定した運営が見込めます。稼働率向上やOTA手数料の見直しでさらなる改善が可能です。'; color='#27ae60'; }
+    else if(profit > 0){ text='👍 収益はプラスです。稼働率をさらに上げることで収益改善が見込めます。'; color='#e67e22'; }
+    else { text='❌ 現在の設定では赤字の見込みです。収益増加またはコスト削減の抜本的な見直しが必要です。'; color='#e74c3c'; }
+  } else {
+    if(roi>=10&&occ>=50){ text='✅ 優秀な収益性です。高稼働・高ROIを維持しており、事業として非常に健全です。スケールアップも検討できます。'; color='#27ae60'; }
+    else if(roi>=5&&occ>=30){ text='👍 良好な収益性です。安定した運営が見込めます。稼働率向上やOTA手数料の見直しでさらなる改善が可能です。'; color='#27ae60'; }
+    else if(roi>=2){ text='⚠️ 収益性はやや低めです。繁忙期施策の強化、宿泊料金の見直し、またはコスト削減の余地を確認してください。'; color='#e67e22'; }
+    else if(roi>0){ text='⚠️ ROIが低い状態です。料金戦略や稼働率向上の根本的な見直しをお勧めします。'; color='#e67e22'; }
+    else { text='❌ 現在の設定では赤字の見込みです。収益増加またはコスト削減の抜本的な見直しが必要です。'; color='#e74c3c'; }
+  }
+  const el = document.getElementById('diagnosisText');
+  if(el){ el.textContent=text; el.style.color=color; }
+  return text;
 }
 
 function toggleRoomCount(){
